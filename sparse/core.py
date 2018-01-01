@@ -638,6 +638,8 @@ class COO(object):
         return csc
 
     def sort_indices(self):
+        if self.nnz == 0:
+            self.sorted = True
         if self.sorted:
             return
 
@@ -645,30 +647,31 @@ class COO(object):
 
         if (np.diff(linear) > 0).all():  # already sorted
             self.sorted = True
-            return self
+            return
 
         order = np.argsort(linear)
         self.coords = self.coords[:, order]
         self.data = self.data[order]
         self.sorted = True
-        return self
 
     def sum_duplicates(self):
         # Inspired by scipy/sparse/coo.py::sum_duplicates
         # See https://github.com/scipy/scipy/blob/master/LICENSE.txt
-        if not self.has_duplicates:
-            return self
-        if not np.prod(self.coords.shape):
-            return self
-
         self.sort_indices()
+
+        if self.nnz == 0:
+            self.has_duplicates = False
+        if not self.has_duplicates:
+            return
+        if not np.prod(self.coords.shape):
+            return
 
         linear = self.linear_loc()
         unique_mask = np.diff(linear) != 0
 
         if unique_mask.sum() == len(unique_mask):  # already unique
             self.has_duplicates = False
-            return self
+            return
 
         unique_mask = np.append(True, unique_mask)
 
@@ -679,8 +682,6 @@ class COO(object):
         self.data = data
         self.coords = coords
         self.has_duplicates = False
-
-        return self
 
     def __add__(self, other):
         return self.elemwise(operator.add, other)
@@ -1300,7 +1301,7 @@ class COO(object):
 
     def maybe_densify(self, allowed_nnz=1e3, allowed_fraction=0.25):
         """ Convert to a dense numpy array if not too costly.  Err othrewise """
-        if reduce(operator.mul, self.shape) <= allowed_nnz or self.nnz >= np.prod(self.shape) * allowed_fraction:
+        if self.ndim == 0 or reduce(operator.mul, self.shape) <= allowed_nnz or self.nnz >= np.prod(self.shape) * allowed_fraction:
             return self.todense()
         else:
             raise NotImplementedError("Operation would require converting "
