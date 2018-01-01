@@ -7,7 +7,7 @@ import scipy.stats
 from sparse import COO
 
 import sparse
-from sparse.utils import assert_eq, is_lexsorted
+from sparse.utils import is_lexsorted
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -24,7 +24,7 @@ def test_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = getattr(x, reduction)(axis=axis, keepdims=keepdims, **kwargs)
     yy = getattr(y, reduction)(axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert sparse.allclose(xx, yy, **eqkwargs)
 
 
 @pytest.mark.parametrize('reduction,kwargs,eqkwargs', [
@@ -41,7 +41,7 @@ def test_ufunc_reductions(reduction, axis, keepdims, kwargs, eqkwargs):
     y = x.todense()
     xx = reduction(x, axis=axis, keepdims=keepdims, **kwargs)
     yy = reduction(y, axis=axis, keepdims=keepdims, **kwargs)
-    assert_eq(xx, yy, **eqkwargs)
+    assert sparse.allclose(xx, yy, **eqkwargs)
 
 
 @pytest.mark.parametrize('axis', [
@@ -58,7 +58,7 @@ def test_transpose(axis):
     y = x.todense()
     xx = x.transpose(axis)
     yy = y.transpose(axis)
-    assert_eq(xx, yy)
+    assert sparse.allclose(xx, yy)
 
 
 @pytest.mark.parametrize('axis', [
@@ -95,7 +95,7 @@ def test_reshape(a, b):
     s = sparse.random(a, density=0.5)
     x = s.todense()
 
-    assert_eq(x.reshape(b), s.reshape(b))
+    assert sparse.allclose(x.reshape(b), s.reshape(b))
 
 
 def test_large_reshape():
@@ -107,7 +107,7 @@ def test_large_reshape():
 
     x = COO((data, (row, col)), sorted=True, has_duplicates=False)
 
-    assert_eq(x, x.reshape(x.shape))
+    assert sparse.allclose(x, x.reshape(x.shape))
 
 
 def test_reshape_same():
@@ -121,7 +121,7 @@ def test_to_scipy_sparse():
     a = s.to_scipy_sparse()
     b = scipy.sparse.coo_matrix(s.todense())
 
-    assert_eq(a, b)
+    assert sparse.allclose(a, b)
 
 
 @pytest.mark.parametrize('a_shape,b_shape,axes', [
@@ -143,15 +143,15 @@ def test_tensordot(a_shape, b_shape, axes):
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(np.tensordot(a, b, axes),
+    assert sparse.allclose(np.tensordot(a, b, axes),
               sparse.tensordot(sa, sb, axes))
 
-    assert_eq(np.tensordot(a, b, axes),
+    assert sparse.allclose(np.tensordot(a, b, axes),
               sparse.tensordot(sa, b, axes))
 
     # assert isinstance(sparse.tensordot(sa, b, axes), COO)
 
-    assert_eq(np.tensordot(a, b, axes),
+    assert sparse.allclose(np.tensordot(a, b, axes),
               sparse.tensordot(a, sb, axes))
 
     # assert isinstance(sparse.tensordot(a, sb, axes), COO)
@@ -165,17 +165,17 @@ def test_dot():
     a = sa.todense()
     b = sb.todense()
 
-    assert_eq(a.dot(b), sa.dot(sb))
-    assert_eq(np.dot(a, b), sparse.dot(sa, sb))
+    assert sparse.allclose(a.dot(b), sa.dot(sb))
+    assert sparse.allclose(np.dot(a, b), sparse.dot(sa, sb))
 
     if hasattr(operator, 'matmul'):
         # Basic equivalences
-        assert_eq(eval("a @ b"), eval("sa @ sb"))
-        assert_eq(eval("sa @ sb"), sparse.dot(sa, sb))
+        assert sparse.allclose(eval("a @ b"), eval("sa @ sb"))
+        assert sparse.allclose(eval("sa @ sb"), sparse.dot(sa, sb))
 
         # Test that SOO's and np.array's combine correctly
         # Not possible due to https://github.com/numpy/numpy/issues/9028
-        # assert_eq(eval("a @ sb"), eval("sa @ b"))
+        # assert sparse.allclose(eval("a @ sb"), eval("sa @ b"))
 
 
 @pytest.mark.xfail
@@ -192,8 +192,8 @@ def test_dot_nocoercion():
 
     if hasattr(operator, 'matmul'):
         # Operations with naive collection (list)
-        assert_eq(eval("la @ b"), eval("la @ sb"))
-        assert_eq(eval("a @ lb"), eval("sa @ lb"))
+        assert sparse.allclose(eval("la @ b"), eval("la @ sb"))
+        assert sparse.allclose(eval("a @ lb"), eval("sa @ lb"))
 
 
 @pytest.mark.parametrize('func', [np.expm1, np.log1p, np.sin, np.tan,
@@ -209,7 +209,7 @@ def test_elemwise(func):
 
     assert isinstance(fs, COO)
 
-    assert_eq(func(x), fs)
+    assert sparse.allclose(func(x), fs)
 
 
 @pytest.mark.parametrize('func', [
@@ -224,7 +224,7 @@ def test_elemwise_binary(func, shape):
     x = xs.todense()
     y = ys.todense()
 
-    assert_eq(func(xs, ys), func(x, y))
+    assert sparse.allclose(func(xs, ys), func(x, y))
 
 
 @pytest.mark.parametrize('func', [
@@ -248,7 +248,7 @@ def test_op_scipy_sparse():
     ys = scipy.sparse.csr_matrix(y)
     x = xs.todense()
 
-    assert_eq(x + y, xs + ys)
+    assert sparse.allclose(x + y, xs + ys)
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -278,7 +278,7 @@ def test_elemwise_scalar(func, scalar, convert_to_np_number):
     assert isinstance(fs, COO)
     assert xs.nnz >= fs.nnz
 
-    assert_eq(fs, func(x, y))
+    assert sparse.allclose(fs, func(x, y))
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -305,7 +305,7 @@ def test_leftside_elemwise_scalar(func, scalar, convert_to_np_number):
     assert isinstance(fs, COO)
     assert xs.nnz >= fs.nnz
 
-    assert_eq(fs, func(y, x))
+    assert sparse.allclose(fs, func(y, x))
 
 
 @pytest.mark.parametrize('func, scalar', [
@@ -342,7 +342,7 @@ def test_bitwise_binary(func, shape):
     x = xs.todense()
     y = ys.todense()
 
-    assert_eq(func(xs, ys), func(x, y))
+    assert sparse.allclose(func(xs, ys), func(x, y))
 
 
 @pytest.mark.parametrize('func', [operator.and_, operator.or_, operator.xor])
@@ -355,7 +355,7 @@ def test_bitwise_binary_bool(func, shape):
     x = xs.todense()
     y = ys.todense()
 
-    assert_eq(func(xs, ys), func(x, y))
+    assert sparse.allclose(func(xs, ys), func(x, y))
 
 
 def test_elemwise_binary_empty():
@@ -373,11 +373,11 @@ def test_gt():
     x = s.todense()
 
     m = x.mean()
-    assert_eq(x > m, s > m)
+    assert sparse.allclose(x > m, s > m)
 
     m = s.data[2]
-    assert_eq(x > m, s > m)
-    assert_eq(x >= m, s >= m)
+    assert sparse.allclose(x > m, s > m)
+    assert sparse.allclose(x >= m, s >= m)
 
 
 @pytest.mark.parametrize('index', [
@@ -431,7 +431,7 @@ def test_slicing(index):
     s = sparse.random((2, 3, 4), density=0.5)
     x = s.todense()
 
-    assert_eq(x[index], s[index])
+    assert sparse.allclose(x[index], s[index])
 
 
 def test_custom_dtype_slicing():
@@ -447,9 +447,9 @@ def test_custom_dtype_slicing():
     assert x[1, 1, 1] == s[1, 1, 1]
     assert x[0, 1, 2] == s[0, 1, 2]
 
-    assert_eq(x['part1'], s['part1'])
-    assert_eq(x['part2'], s['part2'])
-    assert_eq(x['part3'], s['part3'])
+    assert sparse.allclose(x['part1'], s['part1'])
+    assert sparse.allclose(x['part2'], s['part2'])
+    assert sparse.allclose(x['part3'], s['part3'])
 
 
 @pytest.mark.parametrize('index', [
@@ -492,7 +492,7 @@ def test_canonical():
     x = COO(coords, data, shape=(2, 2, 5))
     x.sum_duplicates()
 
-    assert_eq(old, x)
+    assert sparse.allclose(old, x)
     # assert x.nnz == 5
     # assert x.has_duplicates
     assert x.nnz == 3
@@ -507,7 +507,7 @@ def test_concatenate():
     zz = sparse.random((4, 3, 4), density=0.5)
     z = zz.todense()
 
-    assert_eq(np.concatenate([x, y, z], axis=0),
+    assert sparse.allclose(np.concatenate([x, y, z], axis=0),
               sparse.concatenate([xx, yy, zz], axis=0))
 
     xx = sparse.random((5, 3, 1), density=0.5)
@@ -517,10 +517,10 @@ def test_concatenate():
     zz = sparse.random((5, 3, 2), density=0.5)
     z = zz.todense()
 
-    assert_eq(np.concatenate([x, y, z], axis=2),
+    assert sparse.allclose(np.concatenate([x, y, z], axis=2),
               sparse.concatenate([xx, yy, zz], axis=2))
 
-    assert_eq(np.concatenate([x, y, z], axis=-1),
+    assert sparse.allclose(np.concatenate([x, y, z], axis=-1),
               sparse.concatenate([xx, yy, zz], axis=-1))
 
 
@@ -535,7 +535,7 @@ def test_concatenate_mixed(func, axis):
 
     assert isinstance(result, COO)
 
-    assert_eq(result, expected)
+    assert sparse.allclose(result, expected)
 
 
 @pytest.mark.parametrize('shape', [(5,), (2, 3, 4), (5, 2)])
@@ -548,7 +548,7 @@ def test_stack(shape, axis):
     zz = sparse.random(shape, density=0.5)
     z = zz.todense()
 
-    assert_eq(np.stack([x, y, z], axis=axis),
+    assert sparse.allclose(np.stack([x, y, z], axis=axis),
               sparse.stack([xx, yy, zz], axis=axis))
 
 
@@ -559,10 +559,10 @@ def test_large_concat_stack():
     xs = COO(coords, data, shape=(256,), has_duplicates=False, sorted=True)
     x = xs.todense()
 
-    assert_eq(np.stack([x, x]),
+    assert sparse.allclose(np.stack([x, x]),
               sparse.stack([xs, xs]))
 
-    assert_eq(np.concatenate((x, x)),
+    assert sparse.allclose(np.concatenate((x, x)),
               sparse.concatenate((xs, xs)))
 
 
@@ -581,8 +581,8 @@ def test_addition():
     b = sparse.random((2, 3, 4), density=0.5)
     y = b.todense()
 
-    assert_eq(x + y, a + b)
-    assert_eq(x - y, a - b)
+    assert sparse.allclose(x + y, a + b)
+    assert sparse.allclose(x - y, a - b)
 
 
 def test_addition_not_ok_when_large_and_sparse():
@@ -616,7 +616,7 @@ def test_broadcasting(func, shape1, shape2):
     expected = func(x, z)
     actual = func(a, c)
 
-    assert_eq(expected, actual)
+    assert sparse.allclose(expected, actual)
 
     assert np.count_nonzero(expected) == actual.nnz
 
@@ -628,7 +628,7 @@ def test_broadcast_to(shape1, shape2):
     a = sparse.random(shape1, density=0.5)
     x = a.todense()
 
-    assert_eq(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
+    assert sparse.allclose(np.broadcast_to(x, shape2), a.broadcast_to(shape2))
 
 
 @pytest.mark.parametrize('scalar', [2, 2.5, np.float32(2.0), np.int8(3)])
@@ -636,13 +636,13 @@ def test_scalar_multiplication(scalar):
     a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
-    assert_eq(x * scalar, a * scalar)
+    assert sparse.allclose(x * scalar, a * scalar)
     assert (a * scalar).nnz == a.nnz
-    assert_eq(scalar * x, scalar * a)
+    assert sparse.allclose(scalar * x, scalar * a)
     assert (scalar * a).nnz == a.nnz
-    assert_eq(x / scalar, a / scalar)
+    assert sparse.allclose(x / scalar, a / scalar)
     assert (a / scalar).nnz == a.nnz
-    assert_eq(x // scalar, a // scalar)
+    assert sparse.allclose(x // scalar, a // scalar)
     # division may reduce nnz.
 
 
@@ -651,11 +651,11 @@ def test_scalar_exponentiation():
     a = sparse.random((2, 3, 4), density=0.5)
     x = a.todense()
 
-    assert_eq(x ** 2, a ** 2)
-    assert_eq(x ** 0.5, a ** 0.5)
+    assert sparse.allclose(x ** 2, a ** 2)
+    assert sparse.allclose(x ** 0.5, a ** 0.5)
 
     with pytest.raises((ValueError, ZeroDivisionError)):
-        assert_eq(x ** -1, a ** -1)
+        assert sparse.allclose(x ** -1, a ** -1)
 
 
 def test_create_with_lists_of_tuples():
@@ -670,7 +670,7 @@ def test_create_with_lists_of_tuples():
     for ind, value in L:
         x[ind] = value
 
-    assert_eq(s, x)
+    assert sparse.allclose(s, x)
 
 
 def test_sizeof():
@@ -694,13 +694,13 @@ def test_scipy_sparse_interface():
     x = scipy.sparse.coo_matrix(inp)
     xx = sparse.COO(inp)
 
-    assert_eq(x, xx)
-    assert_eq(x.T, xx.T)
-    assert_eq(xx.to_scipy_sparse(), x)
-    assert_eq(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx)
+    assert sparse.allclose(x, xx)
+    assert sparse.allclose(x.T, xx.T)
+    assert sparse.allclose(xx.to_scipy_sparse(), x)
+    assert sparse.allclose(COO.from_scipy_sparse(xx.to_scipy_sparse()), xx)
 
-    assert_eq(x, xx)
-    assert_eq(x.T.dot(x), xx.T.dot(xx))
+    assert sparse.allclose(x, xx)
+    assert sparse.allclose(x.T.dot(x), xx.T.dot(xx))
 
 
 def test_cache_csr():
@@ -722,7 +722,7 @@ def test_empty_shape():
 def test_single_dimension():
     x = COO([1, 3], [1.0, 3.0])
     assert x.shape == (4,)
-    assert_eq(x, np.array([0, 1.0, 0, 3.0]))
+    assert sparse.allclose(x, np.array([0, 1.0, 0, 3.0]))
 
 
 def test_raise_dense():
@@ -776,18 +776,18 @@ def test_scalar_slicing():
     x = np.array([0, 1])
     s = COO(x)
     assert np.isscalar(s[0])
-    assert_eq(x[0], s[0])
+    assert sparse.allclose(x[0], s[0])
 
     assert isinstance(s[0, ...], COO)
     assert s[0, ...].shape == ()
-    assert_eq(x[0, ...], s[0, ...])
+    assert sparse.allclose(x[0, ...], s[0, ...])
 
     assert np.isscalar(s[1])
-    assert_eq(x[1], s[1])
+    assert sparse.allclose(x[1], s[1])
 
     assert isinstance(s[1, ...], COO)
     assert s[1, ...].shape == ()
-    assert_eq(x[1, ...], s[1, ...])
+    assert sparse.allclose(x[1, ...], s[1, ...])
 
 
 @pytest.mark.parametrize('shape, k', [
@@ -801,15 +801,15 @@ def test_triul(shape, k):
     s = sparse.random(shape, density=0.5)
     x = s.todense()
 
-    assert_eq(np.triu(x, k), sparse.triu(s, k))
-    assert_eq(np.tril(x, k), sparse.tril(s, k))
+    assert sparse.allclose(np.triu(x, k), sparse.triu(s, k))
+    assert sparse.allclose(np.tril(x, k), sparse.tril(s, k))
 
 
 def test_empty_reduction():
     x = np.zeros((2, 3, 4), dtype=np.float_)
     xs = COO.from_numpy(x)
 
-    assert_eq(x.sum(axis=(0, 2)),
+    assert sparse.allclose(x.sum(axis=(0, 2)),
               xs.sum(axis=(0, 2)))
 
 
@@ -841,7 +841,7 @@ def test_two_random_same_seed():
     s1 = sparse.random((2, 3, 4), 0.3, random_state=state)
     s2 = sparse.random((2, 3, 4), 0.3, random_state=state)
 
-    assert_eq(s1, s2)
+    assert sparse.allclose(s1, s2)
 
 
 def test_random_sorted():
@@ -873,10 +873,44 @@ def test_scalar_shape_construction():
     coords = np.arange(5)[None]
 
     s = COO(coords, x, shape=5)
-
-    assert_eq(x, s)
+    assert sparse.allclose(x, s)
 
 
 def test_len():
     s = sparse.random((20, 30, 40))
     assert len(s) == 20
+
+
+@pytest.mark.parametrize('density', [
+    0.0, 0.01, 0.5, 1.0,
+])
+def test_allclose(density):
+    xs = sparse.random((2, 4, 5), density=density)
+    ys = sparse.random((2, 4, 3), density=density)
+
+    # Sparse on sparse without canonicalizing
+    with pytest.raises(ValueError):
+        assert sparse.allclose(xs, xs, maybe_canonicalize=False, maybe_densify=False)
+    assert not sparse.allclose(xs, ys, maybe_canonicalize=False, maybe_densify=False)
+
+    x = xs.todense()
+    y = ys.todense()
+
+    # Sparse on sparse
+    assert sparse.allclose(xs, xs)
+    assert not sparse.allclose(xs, ys)
+    assert not sparse.allclose(xs, xs.astype(int))
+
+    # Mixed without densifying
+    with pytest.raises(ValueError):
+        sparse.allclose(xs, x, maybe_densify=False)
+
+    # Dense on dense
+    assert sparse.allclose(x, x)
+    assert not sparse.allclose(x, y)
+    assert not sparse.allclose(x, y, maybe_densify=False)
+    assert not sparse.allclose(x, x.astype(int), maybe_densify=False)
+
+    # Mixed with densifying
+    assert sparse.allclose(x, xs)
+    assert not sparse.allclose(x, ys)
