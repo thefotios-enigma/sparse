@@ -8,7 +8,8 @@ def allclose(
     y,
     maybe_canonicalize=True,
     maybe_densify=True,
-    **kwargs
+    rtol=1e-05,
+    atol=1e-08,
 ):
     """ Efficiently two arrays, both sparse and dense
 
@@ -21,8 +22,14 @@ def allclose(
     maybe_densify: bool, optional
         Densify COO arrays if sparse comparison fails. Needs to be
         :code:`True` when comparing dense and sparse arrays
-    **kwargs: mixed
-        Keyword arguments passed to `numpy.allclose`
+    rtol: float
+        Relative tolerance
+    atol: float
+        Absolute tolerance
+
+    See Also
+    --------
+    numpy.allclose : NumPy equivalent, also used internally
 
     """
     xt = type(x)
@@ -57,7 +64,7 @@ def allclose(
         ):
             return (
                 np.array_equal(x.coords, y.coords) and
-                np.allclose(x.data, y.data, **kwargs)
+                np.allclose(x.data, y.data, rtol=rtol, atol=atol)
             )
 
     # Data seems very heterogenous, let's try densifying, if we are allowed
@@ -70,12 +77,12 @@ def allclose(
             yy = y.maybe_densify()
         except AttributeError:
             yy = y
-        if np.allclose(xx, yy, **kwargs):
+        if np.allclose(xx, yy, rtol=rtol, atol=atol):
             return True
 
     # Just blindly try numpy allclose, will raise TypeError for COO classes
     try:
-        return np.allclose(x, y, **kwargs)
+        return np.allclose(x, y, rtol=rtol, atol=atol)
     except TypeError:
         pass
 
