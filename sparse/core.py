@@ -423,12 +423,13 @@ class COO(object):
 
     def transpose(self, axes=None):
         if axes is None:
-            axes = reversed(range(self.ndim))
+            axes = list(reversed(range(self.ndim)))
 
         # Normalize all axe indices to posivite values
-        try:
-            axes = np.arange(self.ndim)[list(axes)]
-        except IndexError:
+        axes = np.array(axes)
+        axes[axes < 0] += self.ndim
+
+        if np.any(axes >= self.ndim) or np.any(axes < 0):
             raise ValueError("invalid axis for this array")
 
         if len(np.unique(axes)) < len(axes):
