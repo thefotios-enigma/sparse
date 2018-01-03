@@ -816,3 +816,26 @@ def test_scalar_shape_construction():
     s = COO(coords, x, shape=5)
 
     assert_eq(x, s)
+
+
+@pytest.mark.parametrize('expression, shape1, shape2', [
+    ('i,i->i', (5,), (5,)),
+    ('i,i->', (5,), (5,)),
+    ('ij,jk->ki', (3, 4), (4, 5)),
+    ('i,ij->i', (4,), (4, 5)),
+    ('fns,kns->fkns', (3, 4, 5), (6, 4, 5)),
+])
+@pytest.mark.parametrize('density', [
+    0.0, 0.01, 0.1, 0.3,
+])
+def test_einsum(expression, shape1, shape2, density):
+    sAA = sparse.random(shape1, density=density)
+    sBB = sparse.random(shape2, density=density)
+
+    AA = sAA.todense()
+    BB = sBB.todense()
+
+    out = np.einsum(expression, AA, BB)
+    sout = sparse.einsum(expression, sAA, sBB)
+
+    assert_eq(out, sout)
