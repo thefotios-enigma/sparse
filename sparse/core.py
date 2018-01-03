@@ -8,6 +8,7 @@ import copy
 
 import numpy as np
 import scipy.sparse
+import scipy.stats
 
 from .slicing import normalize_index
 
@@ -1781,9 +1782,9 @@ def einsum(ops, *args):
     inops = inops.split(',')
 
     # All indices that are in input AND in output are multiplies
-    multiplies = list(set(inops[0]) & set(inops[1]) & set(outops))
+    multiplies = sorted(list(set(inops[0]) & set(inops[1]) & set(outops)))
     # All indices that are in input BUT NOT in output are sum contractions
-    sums = list((set(inops[0]) & set(inops[1])) - set(outops))
+    sums = sorted(list((set(inops[0]) & set(inops[1])) - set(outops)))
 
     # Map sums and indices to axis integers
     multiplies = [[inop.find(x) for x in multiplies] for inop in inops]
@@ -1794,5 +1795,8 @@ def einsum(ops, *args):
     lookup2 = {x: i + len(lookup) for i, x in enumerate(inops[1]) if x not in lookup}
     lookup = {**lookup, **lookup2}
     transpose = [lookup[x] for x in outops]
+
+    # Map transpose values to their rank (index in ordered list)
+    transpose = scipy.stats.rankdata(transpose).astype(int) - 1
 
     return tensordot2(*args, sum=sums, multiply=multiplies).transpose(transpose)
