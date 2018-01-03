@@ -819,11 +819,12 @@ def test_scalar_shape_construction():
 
 
 @pytest.mark.parametrize('expression, shape1, shape2', [
-    ('i,i->i', (5,), (5,)),
-    ('i,i->', (5,), (5,)),
-    ('ij,jk->ki', (3, 4), (4, 5)),
-    ('i,ij->i', (4,), (4, 5)),
-    ('fns,kns->fkns', (3, 4, 5), (6, 4, 5)),
+    ('i,i->i', (50,), (50,)),
+    ('i,i->', (50,), (50,)),
+    ('ij,jk->ki', (30, 40), (40, 50)),
+    ('i,ij->i', (40,), (40, 50)),  # fails sporadically
+    ('fns,kns->fkns', (30, 40, 50), (60, 40, 50)),
+    ('ijk,jil->kl', (30, 40, 60), (40, 30, 50)),
 ])
 @pytest.mark.parametrize('density', [
     0.0, 0.01, 0.1, 0.3,
