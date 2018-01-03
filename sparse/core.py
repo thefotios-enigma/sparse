@@ -1790,13 +1790,10 @@ def einsum(ops, *args):
     multiplies = [[inop.find(x) for x in multiplies] for inop in inops]
     sums = [[inop.find(x) for x in sums] for inop in inops]
 
-    # Generate character->axis lookup table to get final transpose
-    lookup = {x: i for i, x in enumerate(inops[0])}
-    lookup2 = {x: i + len(lookup) for i, x in enumerate(inops[1]) if x not in lookup}
-    lookup = {**lookup, **lookup2}
-    transpose = [lookup[x] for x in outops]
-
-    # Map transpose values to their rank (index in ordered list)
+    # Find output axes in input axes for final transpose
+    # Values very likely lie outside of output tensor shape, so
+    # just map them values to their rank (index in ordered list)
+    transpose = [''.join(inops).find(x) for x in outops]
     transpose = scipy.stats.rankdata(transpose).astype(int) - 1
 
     return tensordot2(*args, sum=sums, multiply=multiplies).transpose(transpose)
