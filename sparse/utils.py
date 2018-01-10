@@ -80,11 +80,11 @@ def allclose(
         if np.allclose(xx, yy, rtol=rtol, atol=atol):
             return True
 
-    # Just blindly try numpy allclose, will raise TypeError for COO classes
-    try:
-        return np.allclose(x, y, rtol=rtol, atol=atol)
-    except TypeError:
-        pass
+        # Just blindly try numpy allclose
+        try:
+            return np.allclose(x, y, rtol=rtol, atol=atol)
+        except TypeError:
+            pass
 
     # None of the above worked
     raise ValueError(
