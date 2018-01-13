@@ -113,13 +113,13 @@ def cffi_rargsort(data):
 
     return out
 
-data = np.random.randint(10, size=2048)
+data = np.random.randint(10, size=2048 * 4)
 
 %timeit numpy_rargsort(data)
-# 3.47 ms ± 119 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+# 11 ms ± 2.85 ms per loop (mean ± std. dev. of 7 runs, 100 loops each)
 %timeit loop_rargsort(data)
-# 272 ms ± 8.96 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+# 1.17 s ± 86.1 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 %timeit cffi_rargsort(data)
-# 814 µs ± 17.3 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+# 3.27 ms ± 203 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
 %timeit np.argsort(data)
-# 39 µs ± 932 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
+# 346 µs ± 21.4 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
