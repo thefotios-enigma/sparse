@@ -69,11 +69,13 @@ ffibuilder.set_source("_radixargsort", r"""
                 x[r]++;
             }
 
-            memcpy(data, buf, sizeof(*buf) * x[0]);
-            memcpy(data + x[0], buf + n, sizeof(*buf) * x[1]);
+            if(x[0] != 0 && x[1] != 0) {
+                memcpy(data, buf, sizeof(*buf) * x[0]);
+                memcpy(data + x[0], buf + n, sizeof(*buf) * x[1]);
 
-            memcpy(out, argbuf, sizeof(*argbuf) * x[0]);
-            memcpy(out + x[0], argbuf + n, sizeof(*argbuf) * x[1]);
+                memcpy(out, argbuf, sizeof(*argbuf) * x[0]);
+                memcpy(out + x[0], argbuf + n, sizeof(*argbuf) * x[1]);
+            }
         }
         free(sorteddata);
         free(buf);
@@ -118,6 +120,6 @@ data = np.random.randint(10, size=2048)
 %timeit loop_rargsort(data)
 # 272 ms ± 8.96 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
 %timeit cffi_rargsort(data)
-# 952 µs ± 16.3 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+# 814 µs ± 17.3 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
 %timeit np.argsort(data)
 # 39 µs ± 932 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
