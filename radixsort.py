@@ -49,12 +49,6 @@ ffibuilder.set_source("_radixargsort", r"""
         long t = sizeof(T);
         long x[2] = {0, 0};
 
-        T *sorteddata=new T[n];
-        for (i = 0; i < n; i++) {
-            sorteddata[i] = data[i];
-            out[i] = i;
-        }
-
         T (*buf) = new T[2 * n];
         T (*argbuf) = new T[2 * n];
 
@@ -77,7 +71,6 @@ ffibuilder.set_source("_radixargsort", r"""
                 memcpy(out + x[0], argbuf + n, sizeof(*argbuf) * x[1]);
             }
         }
-        free(sorteddata);
         free(buf);
         free(argbuf);
         return 0;
@@ -103,7 +96,8 @@ ffibuilder.compile(verbose=True)
 
 def cffi_rargsort(data):
     import _radixargsort
-    out = np.zeros_like(data)
+    data = data.copy()
+    out = np.arange(len(data))
 
     _radixargsort.lib.rargsort_long(
         _radixargsort.ffi.cast("long *", data.ctypes.data),
