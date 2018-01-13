@@ -46,7 +46,7 @@ ffibuilder.cdef("""
 ffibuilder.set_source("_radixargsort", r"""
     template <typename T> static long rargsort(T *data, T *out, long n) {
         long i, d, r = 0;
-        long t = sizeof(long);
+        long t = sizeof(T);
         long x[2] = {0, 0};
 
         T *sorteddata=new T[n];
