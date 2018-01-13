@@ -10,9 +10,11 @@ def numpy_rargsort(data):
     sorteddata = data.copy()
     out = np.arange(len(data))
     for i in range(data.dtype.itemsize * 8):
+        # Sort data into buckets 0 and 1, depending on the d'th bit
         idx = np.bitwise_and(np.right_shift(sorteddata, i), 1).astype(bool)
-        out = np.concatenate((out[~idx], out[idx]))
+        # Concatenate buckets together to get intermediate result
         sorteddata = np.concatenate((sorteddata[~idx], sorteddata[idx]))
+        out = np.concatenate((out[~idx], out[idx]))
 
     return out
 
@@ -25,11 +27,13 @@ def loop_rargsort(data):
 
     for i in range(data.dtype.itemsize * 8):
         x = [0, 0]
+        # Sort data into buckets 0 and 1, depending on the d'th bit
         for j in range(len(sorteddata)):
             n = (sorteddata[j] >> i) & 1
             buf[n, x[n]] = sorteddata[j]
             argbuf[n, x[n]] = out[j]
             x[n] += 1
+        # Concatenate buckets together to get intermediate result
         sorteddata = np.concatenate((buf[0, :x[0]], buf[1, :x[1]]))
         out = np.concatenate((argbuf[0, :x[0]], argbuf[1, :x[1]]))
 
@@ -56,6 +60,7 @@ ffibuilder.set_source("_radixargsort", r"""
             x[0] = 0;
             x[1] = 0;
 
+            // Sort data into buckets 0 and 1, depending on the d'th bit
             for (i = 0; i < n; i++) {
                 r = (data[i] >> d) & 1;
                 buf[n * r + x[r]] = data[i];
@@ -63,6 +68,7 @@ ffibuilder.set_source("_radixargsort", r"""
                 x[r]++;
             }
 
+            // Concatenate buckets together to get intermediate result
             if(x[0] != 0 && x[1] != 0) {
                 memcpy(data, buf, sizeof(*buf) * x[0]);
                 memcpy(data + x[0], buf + n, sizeof(*buf) * x[1]);
