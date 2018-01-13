@@ -1,54 +1,41 @@
 # %load_ext autoreload
 # %autoreload 2
 # %matplotlib inline
-#
-#
-# import numpy as np
-#
-# # %%
-#
-# data = np.random.randint(10, size=32)
-#
-# def radixargsort(data):
-#     sorteddata = data.copy()
-#     out = np.arange(len(data))
-#     for i in range(data.dtype.itemsize * 8):
-#         idx = np.bitwise_and(np.right_shift(sorteddata, i), 1).astype(bool)
-#         out = np.concatenate((out[~idx], out[idx]))
-#         sorteddata = np.concatenate((sorteddata[~idx], sorteddata[idx]))
-#     return out
-#
-# %timeit radixargsort(np.random.randint(10, size=2048))
-# %timeit np.argsort(np.random.randint(10, size=2048))
-#
-# # %%
-#
-# data = np.random.randint(10, size=32)
-#
-# sorteddata = data.copy()
-# out = np.arange(len(data))
-# buf = np.zeros((2, len(data)), dtype=data.dtype)
-# argbuf = np.zeros((2, len(data)), dtype=data.dtype)
-#
-# for i in range(data.dtype.itemsize * 8):
-#     x = [0, 0]
-#     for j in range(len(sorteddata)):
-#         n = (sorteddata[j] >> i) & 1
-#         buf[n, x[n]] = sorteddata[j]
-#         argbuf[n, x[n]] = out[j]
-#         x[n] += 1
-#     sorteddata = np.concatenate((buf[0, :x[0]], buf[1, :x[1]]))
-#     out = np.concatenate((argbuf[0, :x[0]], argbuf[1, :x[1]]))
-#
-# np.allclose(sorteddata, np.sort(data))
-#
-# # %%
 
-import cffi
+
 import numpy as np
+import cffi
+
+def numpy_rargsort(data):
+    sorteddata = data.copy()
+    out = np.arange(len(data))
+    for i in range(data.dtype.itemsize * 8):
+        idx = np.bitwise_and(np.right_shift(sorteddata, i), 1).astype(bool)
+        out = np.concatenate((out[~idx], out[idx]))
+        sorteddata = np.concatenate((sorteddata[~idx], sorteddata[idx]))
+
+    return out
+
+
+def loop_rargsort(data):
+    sorteddata = data.copy()
+    out = np.arange(len(data))
+    buf = np.zeros((2, len(data)), dtype=data.dtype)
+    argbuf = np.zeros((2, len(data)), dtype=data.dtype)
+
+    for i in range(data.dtype.itemsize * 8):
+        x = [0, 0]
+        for j in range(len(sorteddata)):
+            n = (sorteddata[j] >> i) & 1
+            buf[n, x[n]] = sorteddata[j]
+            argbuf[n, x[n]] = out[j]
+            x[n] += 1
+        sorteddata = np.concatenate((buf[0, :x[0]], buf[1, :x[1]]))
+        out = np.concatenate((argbuf[0, :x[0]], argbuf[1, :x[1]]))
+
+    return out
 
 ffibuilder = cffi.FFI()
-
 
 ffibuilder.cdef("""
     long rargsort_long(long *, long *, long);
@@ -112,18 +99,25 @@ ffibuilder.set_source("_radixargsort", r"""
 """, source_extension='.cpp', extra_compile_args=['-std=c++11'])
 ffibuilder.compile(verbose=True)
 
-import _radixargsort
-data = np.random.randint(10, size=10)
-out = np.zeros_like(data)
+def cffi_rargsort(data):
+    import _radixargsort
+    out = np.zeros_like(data)
 
-print(data)
-print(out)
+    _radixargsort.lib.rargsort_long(
+        _radixargsort.ffi.cast("long *", data.ctypes.data),
+        _radixargsort.ffi.cast("long *", out.ctypes.data),
+        len(data),
+    )
 
-_radixargsort.lib.rargsort_long(
-    _radixargsort.ffi.cast("long *", data.ctypes.data),
-    _radixargsort.ffi.cast("long *", out.ctypes.data),
-    len(data),
-)
+    return out
 
-print(data)
-print(out)
+data = np.random.randint(10, size=2048)
+
+%timeit numpy_rargsort(data)
+# 3.47 ms ± 119 µs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+%timeit loop_rargsort(data)
+# 272 ms ± 8.96 ms per loop (mean ± std. dev. of 7 runs, 1 loop each)
+%timeit cffi_rargsort(data)
+# 952 µs ± 16.3 µs per loop (mean ± std. dev. of 7 runs, 1000 loops each)
+%timeit np.argsort(data)
+# 39 µs ± 932 ns per loop (mean ± std. dev. of 7 runs, 10000 loops each)
