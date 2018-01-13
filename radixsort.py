@@ -51,22 +51,25 @@ ffibuilder = cffi.FFI()
 
 
 ffibuilder.cdef("""
-    int cffi_radixargsort(long *, long *, long);
+    long rargsort_long(long *, long *, long);
+    long rargsort_longlong(long long *, long long *, long);
+    long rargsort_int(int *, int *, long);
+    long rargsort_short(short *, short *, long);
 """)
 ffibuilder.set_source("_radixargsort", r"""
-    static long cffi_radixargsort(long *data, long *out, long n) {
+    template <typename T> static long rargsort(T *data, T *out, long n) {
         long i, d, r = 0;
         long t = sizeof(long);
         long x[2] = {0, 0};
 
-        long *sorteddata=malloc(sizeof(*data) * n);
+        T *sorteddata=new T[n];
         for (i = 0; i < n; i++) {
             sorteddata[i] = data[i];
             out[i] = i;
         }
 
-        long (*buf) = malloc(sizeof(*buf) * 2 * n);
-        long (*argbuf) = malloc(sizeof(*argbuf) * 2 * n);
+        T (*buf) = new T[2 * n];
+        T (*argbuf) = new T[2 * n];
 
         for (d = 0; d < t * 8; d++) {
             x[0] = 0;
@@ -90,7 +93,23 @@ ffibuilder.set_source("_radixargsort", r"""
         free(argbuf);
         return 0;
     }
-""")
+
+    static long rargsort_longlong(long long *data, long long *out, long n) {
+        return rargsort(data, out, n);
+    }
+
+    static long rargsort_long(long *data, long *out, long n) {
+        return rargsort(data, out, n);
+    }
+
+    static long rargsort_int(int *data, int *out, long n) {
+        return rargsort(data, out, n);
+    }
+
+    static long rargsort_short(short *data, short *out, long n) {
+        return rargsort(data, out, n);
+    }
+""", source_extension='.cpp', extra_compile_args=['-std=c++11'])
 ffibuilder.compile(verbose=True)
 
 import _radixargsort
@@ -100,7 +119,7 @@ out = np.zeros_like(data)
 print(data)
 print(out)
 
-_radixargsort.lib.cffi_radixargsort(
+_radixargsort.lib.rargsort_long(
     _radixargsort.ffi.cast("long *", data.ctypes.data),
     _radixargsort.ffi.cast("long *", out.ctypes.data),
     len(data),
