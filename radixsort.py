@@ -65,8 +65,8 @@ ffibuilder.set_source("_radixargsort", r"""
             out[i] = i;
         }
 
-        long (*buf)[n] = malloc(sizeof(*buf) * 2);
-        long (*argbuf)[n] = malloc(sizeof(*argbuf) * 2);
+        long (*buf) = malloc(sizeof(*buf) * 2 * n);
+        long (*argbuf) = malloc(sizeof(*argbuf) * 2 * n);
 
         for (d = 0; d < t * 8; d++) {
             x[0] = 0;
@@ -74,16 +74,16 @@ ffibuilder.set_source("_radixargsort", r"""
 
             for (i = 0; i < n; i++) {
                 r = (data[i] >> d) & 1;
-                buf[r][x[r]] = data[i];
-                argbuf[r][x[r]] = out[i];
+                buf[n * r + x[r]] = data[i];
+                argbuf[n * r + x[r]] = out[i];
                 x[r]++;
             }
 
-            memcpy(data, buf[0], sizeof(**buf) * x[0]);
-            memcpy(data + x[0], buf[1], sizeof(**buf) * x[1]);
+            memcpy(data, buf, sizeof(*buf) * x[0]);
+            memcpy(data + x[0], buf + n, sizeof(*buf) * x[1]);
 
-            memcpy(out, argbuf[0], sizeof(**argbuf) * x[0]);
-            memcpy(out + x[0], argbuf[1], sizeof(**argbuf) * x[1]);
+            memcpy(out, argbuf, sizeof(*argbuf) * x[0]);
+            memcpy(out + x[0], argbuf + n, sizeof(*argbuf) * x[1]);
         }
         free(sorteddata);
         free(buf);
