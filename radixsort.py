@@ -87,8 +87,9 @@ ffibuilder.set_source("_radixargsort", r"""
                 }
             }
         }
-        free(buf);
-        free(argbuf);
+        delete[] x;
+        delete[] buf;
+        delete[] argbuf;
         return 0;
     }
 
