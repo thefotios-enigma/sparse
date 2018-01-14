@@ -130,7 +130,7 @@ def cffi_rargsort(data, bits=1):
 
 # %%
 
-data = np.random.randint(100, size=32784)
+data = np.random.randint(100, size=8196)
 
 for bits in [1, 2, 4, 8, 16]:
     print("---- ", bits)
@@ -139,31 +139,31 @@ for bits in [1, 2, 4, 8, 16]:
     out3 = cffi_rargsort(data, bits=bits)
     assert np.allclose(out1, out2)
     assert np.allclose(out1, out3)
-    print("loop   ", timeit.timeit(functools.partial(loop_rargsort, data, bits=bits), number=1))
-    print("vector ", timeit.timeit(functools.partial(numpy_rargsort, data, bits=bits), number=1))
-    print("cffi   ",timeit.timeit(functools.partial(cffi_rargsort, data, bits=bits), number=1))
+    print("loop   ", timeit.timeit(functools.partial(loop_rargsort, data, bits=bits), number=10))
+    print("vector ", timeit.timeit(functools.partial(numpy_rargsort, data, bits=bits), number=10))
+    print("cffi   ",timeit.timeit(functools.partial(cffi_rargsort, data, bits=bits), number=10))
 print("----")
-print("numpy  ", timeit.timeit(functools.partial(np.argsort, data), number=1))
+print("numpy  ", timeit.timeit(functools.partial(np.argsort, data), number=10))
 
 # ----  1
-# loop    5.144431394001003
-# vector  0.0672981120296754
-# cffi    0.023526965989731252
+# loop    14.350793536985293
+# vector  0.1265742700197734
+# cffi    0.03426094597671181
 # ----  2
-# loop    2.226732866023667
-# vector  0.032113015942741185
-# cffi    0.010329116019420326
+# loop    5.145554315997288
+# vector  0.10234820999903604
+# cffi    0.01762533001601696
 # ----  4
-# loop    1.1835657260380685
-# vector  0.0305263219634071
-# cffi    0.007132344006095082
+# loop    2.78461489797337
+# vector  0.11544808198232204
+# cffi    0.011012212955392897
 # ----  8
-# loop    0.7591285859816708
-# vector  0.20522146200528368
-# cffi    0.032997385947965086
+# loop    1.5366798979812302
+# vector  0.648971504997462
+# cffi    0.05971593997674063
 # ----  16
-# loop    1.2740640330011956
-# vector  30.25697514199419
-# cffi    0.01058257999829948
+# loop    6.941754707018845
+# vector  76.90049082605401
+# cffi    0.09592188597889617
 # ----
-# numpy   0.0022905810037627816
+# numpy   0.006686180015094578
