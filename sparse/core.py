@@ -383,6 +383,60 @@ class COO(object):
                    has_duplicates=not x.has_canonical_format,
                    sorted=x.has_canonical_format)
 
+    @classmethod
+    def from_dict(cls, x):
+        """
+        Construct a :obj:`COO` array from a :obj:`dict`. Handy when
+        saving :obj:`COO` objects to disk.
+
+        Parameters
+        ----------
+        x : dict
+            The dict to construct the array from.
+
+        Returns
+        -------
+        COO
+            The converted :obj:`COO` object.
+
+        See Also
+        --------
+        numpy.load : Load arrays or pickled objects from .npy, .npz or pickled
+            files.
+
+        Examples
+        --------
+        >>> x = COO.from_dict(np.load('data.npy')[()]) # doctest: +SKIP
+        """
+        return COO(x['coords'], x['data'], x['shape'])
+
+    def to_dict(self):
+        """
+        Convert this :obj:`COO` array to a :code:`dict` containing
+        :code:`coords`, :code:`data` and :code:`shape` attributes.  Handy when
+        loading :obj:`COO` objects from disk.
+
+        Returns
+        -------
+        dict
+            The dictionary representing this array.
+
+        See Also
+        --------
+        numpy.save : Save an array or dict to a binary file in NumPy .npy
+            format.
+
+        Examples
+        --------
+        >>> x = random((20, 30, 40))
+        >>> np.save('data.npy', x.to_dict()) # doctest: +SKIP
+        """
+        return {
+            'coords': self.coords,
+            'data': self.data,
+            'shape': self.shape,
+        }
+
     @property
     def dtype(self):
         """

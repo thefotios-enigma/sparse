@@ -710,6 +710,13 @@ def test_scipy_sparse_interface():
     assert_eq(x.T.dot(x), xx.T.dot(xx))
 
 
+def test_dict():
+    a = sparse.random((10, 20, 30))
+    b = sparse.COO.from_dict(a.to_dict())
+
+    assert_eq(a, b)
+
+
 def test_cache_csr():
     x = sparse.random((10, 5), density=0.5).todense()
     s = COO(x, cache=True)
