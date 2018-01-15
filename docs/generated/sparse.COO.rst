@@ -18,6 +18,7 @@ COO
       COO.nbytes
       COO.ndim
       COO.nnz
+      COO.__len__
 
    .. rubric:: :doc:`Constructing COO objects <../user_manual/constructing>`
    .. autosummary::

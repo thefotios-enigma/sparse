@@ -500,7 +500,7 @@ class COO(object):
 
         See Also
         --------
-        numpy.ndarray.__len__ : Numpy equivalent property.
+        :obj:`numpy.ndarray.__len__` : Numpy equivalent property.
 
         Examples
         --------
