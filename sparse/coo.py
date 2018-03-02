@@ -697,6 +697,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
         >>> s.reduce(np.add)
         <COO: shape=(5,), dtype=int64, nnz=5, sorted=True, duplicates=False>
         """
+        axis = _normalize_axis(axis, self.ndim)
         zero_reduce_result = method.reduce([_zero_of_dtype(self.dtype)], **kwargs)
 
         if zero_reduce_result != _zero_of_dtype(np.dtype(zero_reduce_result)):
@@ -2813,3 +2814,28 @@ def nanprod(x, axis=None, keepdims=False, dtype=None, out=None):
     assert out is None
     x = asCOO(x)
     return x.nanreduce(np.multiply, axis=axis, keepdims=keepdims, dtype=dtype)
+
+
+def _normalize_axis(axis, ndim):
+    """
+    Normalize negative axis indices to their positive counterpart for a given
+    number of dimensions.
+
+    Parameters
+    ----------
+    axis : Union[int, Iterable[int], None]
+        The axis indices.
+    ndim : int
+        Number of dimensions to normalize axis indices against.
+
+    Returns
+    -------
+    axis
+        The normalized axis indices.
+    """
+    if axis is None:
+        return None
+    if isinstance(axis, Iterable):
+        return tuple(ndim + a if a < 0 else a for a in axis)
+    else:
+        return ndim + axis if axis < 0 else axis
