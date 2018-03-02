@@ -1052,10 +1052,9 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             axes = list(reversed(range(self.ndim)))
 
         # Normalize all axe indices to posivite values
-        axes = np.array(axes)
-        axes[axes < 0] += self.ndim
+        axes = _normalize_axis(axes, self.ndim)
 
-        if np.any(axes >= self.ndim) or np.any(axes < 0):
+        if any(a >= self.ndim for a in axes) or any(a < 0 for a in axes):
             raise ValueError("invalid axis for this array")
 
         if len(np.unique(axes)) < len(axes):
@@ -1065,10 +1064,7 @@ class COO(SparseArray, NDArrayOperatorsMixin):
             raise ValueError("axes don't match array")
 
         # Normalize all axe indices to posivite values
-        try:
-            axes = np.arange(self.ndim)[list(axes)]
-        except IndexError:
-            raise ValueError("invalid axis for this array")
+        axes = _normalize_axis(axes, self.ndim)
 
         if len(np.unique(axes)) < len(axes):
             raise ValueError("repeated axis in transpose")
@@ -1831,8 +1827,7 @@ def concatenate(arrays, axis=0):
     numpy.concatenate : NumPy equivalent function
     """
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
-    if axis < 0:
-        axis = axis + arrays[0].ndim
+    axis = _normalize_axis(axis, arrays[0].ndim)
     assert all(x.shape[ax] == arrays[0].shape[ax]
                for x in arrays
                for ax in set(range(arrays[0].ndim)) - {axis})
@@ -1880,8 +1875,7 @@ def stack(arrays, axis=0):
     """
     assert len(set(x.shape for x in arrays)) == 1
     arrays = [x if isinstance(x, COO) else COO(x) for x in arrays]
-    if axis < 0:
-        axis = axis + arrays[0].ndim + 1
+    axis = _normalize_axis(axis, arrays[0].ndim + 1)
     data = np.concatenate([x.data for x in arrays])
     coords = np.concatenate([x.coords for x in arrays], axis=1)
     shape = list(arrays[0].shape)
@@ -2836,6 +2830,14 @@ def _normalize_axis(axis, ndim):
     if axis is None:
         return None
     if isinstance(axis, Iterable):
-        return tuple(ndim + a if a < 0 else a for a in axis)
+        axis = tuple(ndim + a if a < 0 else a for a in axis)
+        for a in axis:
+            if a >= ndim or a < 0:
+                raise ValueError(
+                    "Invalid axis index %d for ndim=%d" % (a, ndim)
+                )
+        return axis
+    elif isinstance(axis, int):
+        return _normalize_axis([axis], ndim)[0]
     else:
-        return ndim + axis if axis < 0 else axis
+        raise ValueError("axis %s not understood" % axis)
